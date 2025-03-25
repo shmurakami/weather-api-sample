@@ -1,95 +1,99 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+import { useState } from "react";
+import { Container, TextInput, Button, Title, Paper, Text, Stack, Group, Divider, Image } from "@mantine/core";
+
+type WeatherData = {
+  location: {
+    name: string;
+    country: string;
+    localtime: string;
+  };
+  current: {
+    condition: {
+      text: string;
+      icon: string;
+    };
+    temp_c: number;
+    humidity: number;
+    wind_kph: number;
+    feelslike_c: number;
+    is_day: number;
+  };
+};
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [city, setCity] = useState("");
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+  const fetchWeather = async () => {
+    setError(null);
+    setWeather(null);
+    try {
+      const res = await fetch(`/api/weather?city=${encodeURIComponent(city)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Unknown error");
+      } else {
+        setWeather(data);
+      }
+    } catch (err) {
+      setError("Failed to fetch weather");
+    }
+  };
+
+  return (
+    <Container size="sm" pt="xl">
+      <Title order={2} mb="md">
+        Weather Forecast
+      </Title>
+      <Group>
+        <TextInput
+          placeholder="Enter city (e.g., Tokyo)"
+          value={city}
+          onChange={(e) => setCity(e.currentTarget.value)}
+          style={{ flex: 1 }}
+        />
+        <Button onClick={fetchWeather}>Search</Button>
+      </Group>
+
+      {error && (
+        <Text mt="md" c="red">
+          {error}
+        </Text>
+      )}
+
+      {weather && (
+        <Paper shadow="sm" p="md" mt="lg" withBorder>
+          <Stack>
+            <Group justify="space-between">
+              <div>
+                <Title order={3}>
+                  {weather.location.name}, {weather.location.country}
+                </Title>
+                <Text size="sm" c="dimmed">
+                  Local time: {weather.location.localtime}
+                </Text>
+              </div>
+              <Image
+                src={`https:${weather.current.condition.icon}`}
+                alt={weather.current.condition.text}
+                width={64}
+                height={64}
+              />
+            </Group>
+
+            <Divider />
+
+            <Text>{weather.current.condition.text}</Text>
+            <Text>Temperature: {weather.current.temp_c} °C</Text>
+            <Text>Feels like: {weather.current.feelslike_c} °C</Text>
+            <Text>Humidity: {weather.current.humidity} %</Text>
+            <Text>Wind: {weather.current.wind_kph} km/h</Text>
+          </Stack>
+        </Paper>
+      )}
+    </Container>
   );
 }
