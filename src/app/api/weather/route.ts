@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { fetchWeatherByCity } from "../../../lib/weather";
 
 export async function GET(req: NextRequest) {
-  console.log(req.headers.get("x-vercel-oidc-token"));
+  console.log(JSON.stringify({ token: req.headers.get("x-vercel-oidc-token") }));
   const city = req.nextUrl.searchParams.get("city");
   if (!city) {
     return new Response(JSON.stringify({ error: "City is required" }), { status: 400 });
